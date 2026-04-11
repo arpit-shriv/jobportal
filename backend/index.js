@@ -17,12 +17,13 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 const corsOptions = {
-    origin:[
-      "http://localhost:5173",
-      "https://careerbridge-psi.vercel.app",
-      "https://careerbridge.indevs.in"
-    ],
-    credentials:true
+  origin: [
+    "http://localhost:5173",
+    "https://careerbridge-psi.vercel.app",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }
 
 app.use(cors(corsOptions));
@@ -38,7 +39,7 @@ app.use("/api/v1/application", applicationRoute);
 
 
 
-app.listen(PORT,()=>{
+app.listen(PORT, "0.0.0.0", ()=>{
     connectDB();
     console.log(`Server running at port ${PORT}`);
 })
