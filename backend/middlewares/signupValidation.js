@@ -32,17 +32,18 @@ const signupSchema = Joi.object({
     }),
 
   phoneNumber: Joi.string()
-    .trim()
-    // Accepts formats: +91 9876543210 | 9876543210 | +919876543210
-    .pattern(/^\+?[0-9]{1,4}[\s\-]?[0-9]{7,12}$/)
-    .required()
-    .messages({
-      "string.base": "Phone number must be a string.",
-      "string.empty": "Phone number is required.",
-      "string.pattern.base":
-        "Please enter a valid phone number (e.g. +91 9876543210).",
-      "any.required": "Phone number is required.",
-    }),
+  .trim()
+  .pattern(
+    /(^[0-9]{10}$)|(^\+?[0-9]{1,4}[\s\-]?[0-9]{7,12}$)/
+  )
+  .required()
+  .messages({
+    "string.base": "Phone number must be a string.",
+    "string.empty": "Phone number is required.",
+    "string.pattern.base":
+      "Enter a valid phone number (10 digits or with country code).",
+    "any.required": "Phone number is required.",
+  }),
 
   password: Joi.string()
     .min(8)
