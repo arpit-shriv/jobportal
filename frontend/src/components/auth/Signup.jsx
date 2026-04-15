@@ -22,20 +22,29 @@ const Signup = () => {
         role: "",
         file: ""
     });
-    const {loading,user} = useSelector(store=>store.auth);
+
+    // ── NEW: field-level errors state ──
+    const [errors, setErrors] = useState({});
+
+    const { loading, user } = useSelector(store => store.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const changeEventHandler = (e) => {
         setInput({ ...input, [e.target.name]: e.target.value });
+        // Clear error for the field being edited
+        setErrors({ ...errors, [e.target.name]: "" });
     }
     const changeFileHandler = (e) => {
         setInput({ ...input, file: e.target.files?.[0] });
     }
+
     const submitHandler = async (e) => {
         e.preventDefault();
-        const formData = new FormData();    //formdata object
-        formData.append("fullname", input.fullname);
+        setErrors({}); // reset errors on each submit
+
+        const formData = new FormData();
+        formData.append("fullName", input.fullname); // match Joi schema key
         formData.append("email", input.email);
         formData.append("phoneNumber", input.phoneNumber);
         formData.append("password", input.password);
@@ -55,24 +64,33 @@ const Signup = () => {
                 toast.success(res.data.message);
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.response.data.message);
-        } finally{
+            // ── NEW: parse field-level errors from backend ──
+            const errData = error.response?.data;
+            if (errData?.errors && Array.isArray(errData.errors)) {
+                const fieldErrors = {};
+                errData.errors.forEach(({ field, message }) => {
+                    fieldErrors[field] = message;
+                });
+                setErrors(fieldErrors);
+            } else {
+                toast.error(errData?.message || "Something went wrong.");
+            }
+        } finally {
             dispatch(setLoading(false));
         }
     }
 
-    useEffect(()=>{
-        if(user){
-            navigate("/");
-        }
-    },[])
+    useEffect(() => {
+        if (user) navigate("/");
+    }, [])
+
     return (
         <div>
             <Navbar />
             <div className='flex items-center justify-center max-w-7xl mx-auto'>
                 <form onSubmit={submitHandler} className='w-1/2 border border-gray-200 rounded-md p-4 my-10'>
                     <h1 className='font-bold text-xl mb-5'>Sign Up</h1>
+
                     <div className='my-2'>
                         <Label>Full Name</Label>
                         <Input
@@ -81,8 +99,11 @@ const Signup = () => {
                             name="fullname"
                             onChange={changeEventHandler}
                             placeholder="Bob Smith"
+                            className={errors.fullName ? "border-red-500" : ""}
                         />
+                        {errors.fullName && <p className='text-red-500 text-xs mt-1'>{errors.fullName}</p>}
                     </div>
+
                     <div className='my-2'>
                         <Label>Email</Label>
                         <Input
@@ -91,8 +112,11 @@ const Signup = () => {
                             name="email"
                             onChange={changeEventHandler}
                             placeholder="bob@gmail.com"
+                            className={errors.email ? "border-red-500" : ""}
                         />
+                        {errors.email && <p className='text-red-500 text-xs mt-1'>{errors.email}</p>}
                     </div>
+
                     <div className='my-2'>
                         <Label>Phone Number</Label>
                         <Input
@@ -101,8 +125,11 @@ const Signup = () => {
                             name="phoneNumber"
                             onChange={changeEventHandler}
                             placeholder="+91 9876543210"
+                            className={errors.phoneNumber ? "border-red-500" : ""}
                         />
+                        {errors.phoneNumber && <p className='text-red-500 text-xs mt-1'>{errors.phoneNumber}</p>}
                     </div>
+
                     <div className='my-2'>
                         <Label>Password</Label>
                         <Input
@@ -111,8 +138,11 @@ const Signup = () => {
                             name="password"
                             onChange={changeEventHandler}
                             placeholder="*******"
+                            className={errors.password ? "border-red-500" : ""}
                         />
+                        {errors.password && <p className='text-red-500 text-xs mt-1'>{errors.password}</p>}
                     </div>
+
                     <div className='flex items-center justify-between'>
                         <RadioGroup className="flex items-center gap-4 my-5">
                             <div className="flex items-center space-x-2">
@@ -138,6 +168,8 @@ const Signup = () => {
                                 <Label htmlFor="r2">Recruiter</Label>
                             </div>
                         </RadioGroup>
+                        {errors.role && <p className='text-red-500 text-xs mt-1'>{errors.role}</p>}
+
                         <div className='flex items-center gap-2'>
                             <Label>Profile</Label>
                             <Input
@@ -148,8 +180,11 @@ const Signup = () => {
                             />
                         </div>
                     </div>
+
                     {
-                        loading ? <Button className="w-full my-4"> <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Please wait </Button> : <Button type="submit" className="w-full my-4">Signup</Button>
+                        loading
+                            ? <Button className="w-full my-4"><Loader2 className='mr-2 h-4 w-4 animate-spin' /> Please wait</Button>
+                            : <Button type="submit" className="w-full my-4">Signup</Button>
                     }
                     <span className='text-sm'>Already have an account? <Link to="/login" className='text-blue-600'>Login</Link></span>
                 </form>
