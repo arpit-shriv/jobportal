@@ -23,7 +23,6 @@ const Signup = () => {
         file: ""
     });
 
-    // ── NEW: field-level errors state ──
     const [errors, setErrors] = useState({});
 
     const { loading, user } = useSelector(store => store.auth);
@@ -31,20 +30,66 @@ const Signup = () => {
     const navigate = useNavigate();
 
     const changeEventHandler = (e) => {
-        setInput({ ...input, [e.target.name]: e.target.value });
-        // Clear error for the field being edited
+        // For phone number, only allow digits and limit to 10
+        const value = e.target.name === "phoneNumber"
+            ? e.target.value.replace(/\D/g, "").slice(0, 10)
+            : e.target.value;
+        setInput({ ...input, [e.target.name]: value });
         setErrors({ ...errors, [e.target.name]: "" });
     }
+
     const changeFileHandler = (e) => {
         setInput({ ...input, file: e.target.files?.[0] });
     }
 
+    // ── Frontend validation before API call ──
+    const validate = () => {
+        const newErrors = {};
+
+        if (!input.fullname.trim()) {
+            newErrors.fullName = "Full name is required.";
+        } else if (input.fullname.trim().length > 20) {
+            newErrors.fullName = "Full name cannot exceed 20 characters.";
+        }
+
+        if (!input.email.trim()) {
+            newErrors.email = "Email is required.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
+            newErrors.email = "Please enter a valid email address.";
+        }
+
+        if (!input.phoneNumber.trim()) {
+            newErrors.phoneNumber = "Phone number is required.";
+        } else if (!/^[6-9]\d{9}$/.test(input.phoneNumber)) {
+            newErrors.phoneNumber = "Enter a valid 10-digit phone number (starting with 6, 7, 8, or 9).";
+        }
+
+        if (!input.password.trim()) {
+            newErrors.password = "Password is required.";
+        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(input.password)) {
+            newErrors.password = "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).";
+        }
+
+        if (!input.role) {
+            newErrors.role = "Please select a role.";
+        }
+
+        return newErrors;
+    }
+
     const submitHandler = async (e) => {
         e.preventDefault();
-        setErrors({}); // reset errors on each submit
+        setErrors({});
+
+        // Run frontend validation first
+        const validationErrors = validate();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
 
         const formData = new FormData();
-        formData.append("fullName", input.fullname); // match Joi schema key
+        formData.append("fullName", input.fullname);
         formData.append("email", input.email);
         formData.append("phoneNumber", input.phoneNumber);
         formData.append("password", input.password);
@@ -64,7 +109,6 @@ const Signup = () => {
                 toast.success(res.data.message);
             }
         } catch (error) {
-            // ── NEW: parse field-level errors from backend ──
             const errData = error.response?.data;
             if (errData?.errors && Array.isArray(errData.errors)) {
                 const fieldErrors = {};
@@ -91,6 +135,7 @@ const Signup = () => {
                 <form onSubmit={submitHandler} className='w-1/2 border border-gray-200 rounded-md p-4 my-10'>
                     <h1 className='font-bold text-xl mb-5'>Sign Up</h1>
 
+                    {/* Full Name */}
                     <div className='my-2'>
                         <Label>Full Name</Label>
                         <Input
@@ -104,6 +149,7 @@ const Signup = () => {
                         {errors.fullName && <p className='text-red-500 text-xs mt-1'>{errors.fullName}</p>}
                     </div>
 
+                    {/* Email */}
                     <div className='my-2'>
                         <Label>Email</Label>
                         <Input
@@ -117,6 +163,7 @@ const Signup = () => {
                         {errors.email && <p className='text-red-500 text-xs mt-1'>{errors.email}</p>}
                     </div>
 
+                    {/* Phone Number */}
                     <div className='my-2'>
                         <Label>Phone Number</Label>
                         <Input
@@ -124,12 +171,14 @@ const Signup = () => {
                             value={input.phoneNumber}
                             name="phoneNumber"
                             onChange={changeEventHandler}
-                            placeholder="+91 9876543210"
+                            placeholder="9876543210"
+                            maxLength={10}
                             className={errors.phoneNumber ? "border-red-500" : ""}
                         />
                         {errors.phoneNumber && <p className='text-red-500 text-xs mt-1'>{errors.phoneNumber}</p>}
                     </div>
 
+                    {/* Password */}
                     <div className='my-2'>
                         <Label>Password</Label>
                         <Input
@@ -143,32 +192,35 @@ const Signup = () => {
                         {errors.password && <p className='text-red-500 text-xs mt-1'>{errors.password}</p>}
                     </div>
 
+                    {/* Role + File */}
                     <div className='flex items-center justify-between'>
-                        <RadioGroup className="flex items-center gap-4 my-5">
-                            <div className="flex items-center space-x-2">
-                                <Input
-                                    type="radio"
-                                    name="role"
-                                    value="student"
-                                    checked={input.role === 'student'}
-                                    onChange={changeEventHandler}
-                                    className="cursor-pointer"
-                                />
-                                <Label htmlFor="r1">Student</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Input
-                                    type="radio"
-                                    name="role"
-                                    value="recruiter"
-                                    checked={input.role === 'recruiter'}
-                                    onChange={changeEventHandler}
-                                    className="cursor-pointer"
-                                />
-                                <Label htmlFor="r2">Recruiter</Label>
-                            </div>
-                        </RadioGroup>
-                        {errors.role && <p className='text-red-500 text-xs mt-1'>{errors.role}</p>}
+                        <div>
+                            <RadioGroup className="flex items-center gap-4 my-5">
+                                <div className="flex items-center space-x-2">
+                                    <Input
+                                        type="radio"
+                                        name="role"
+                                        value="student"
+                                        checked={input.role === 'student'}
+                                        onChange={changeEventHandler}
+                                        className="cursor-pointer"
+                                    />
+                                    <Label htmlFor="r1">Student</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Input
+                                        type="radio"
+                                        name="role"
+                                        value="recruiter"
+                                        checked={input.role === 'recruiter'}
+                                        onChange={changeEventHandler}
+                                        className="cursor-pointer"
+                                    />
+                                    <Label htmlFor="r2">Recruiter</Label>
+                                </div>
+                            </RadioGroup>
+                            {errors.role && <p className='text-red-500 text-xs mt-1'>{errors.role}</p>}
+                        </div>
 
                         <div className='flex items-center gap-2'>
                             <Label>Profile</Label>
