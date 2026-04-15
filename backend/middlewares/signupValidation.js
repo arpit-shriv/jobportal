@@ -22,6 +22,7 @@ const signupSchema = Joi.object({
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
+    .max(25)
     .lowercase()
     .required()
     .messages({
