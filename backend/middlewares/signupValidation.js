@@ -22,7 +22,6 @@ const signupSchema = Joi.object({
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
-    .max(25)
     .lowercase()
     .required()
     .messages({
@@ -35,7 +34,7 @@ const signupSchema = Joi.object({
   phoneNumber: Joi.string()
   .trim()
   .pattern(
-    /(^[0-9]{10}$)|(^\+?[0-9]{1,4}[\s\-]?[0-9]{7,12}$)/
+    /^[6-9]\d{9}$/
   )
   .required()
   .messages({
