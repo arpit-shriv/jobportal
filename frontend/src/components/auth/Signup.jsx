@@ -30,7 +30,6 @@ const Signup = () => {
     const navigate = useNavigate();
 
     const changeEventHandler = (e) => {
-        // For phone number, only allow digits and limit to 10
         const value = e.target.name === "phoneNumber"
             ? e.target.value.replace(/\D/g, "").slice(0, 10)
             : e.target.value;
@@ -42,14 +41,17 @@ const Signup = () => {
         setInput({ ...input, file: e.target.files?.[0] });
     }
 
-    // ── Frontend validation before API call ──
     const validate = () => {
         const newErrors = {};
 
         if (!input.fullname.trim()) {
-            newErrors.fullName = "Full name is required.";
+            newErrors.fullname = "Full name is required.";
+        } else if (input.fullname.trim().length < 2) {
+            newErrors.fullname = "Full name must be at least 2 characters.";
         } else if (input.fullname.trim().length > 20) {
-            newErrors.fullName = "Full name cannot exceed 20 characters.";
+            newErrors.fullname = "Full name cannot exceed 20 characters.";
+        } else if (!/^[a-zA-Z\s'-]+$/.test(input.fullname.trim())) {
+            newErrors.fullname = "Full name can only contain letters, spaces, hyphens, and apostrophes.";
         }
 
         if (!input.email.trim()) {
@@ -81,7 +83,6 @@ const Signup = () => {
         e.preventDefault();
         setErrors({});
 
-        // Run frontend validation first
         const validationErrors = validate();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
@@ -89,7 +90,7 @@ const Signup = () => {
         }
 
         const formData = new FormData();
-        formData.append("fullName", input.fullname);
+        formData.append("fullname", input.fullname);
         formData.append("email", input.email);
         formData.append("phoneNumber", input.phoneNumber);
         formData.append("password", input.password);
@@ -144,9 +145,9 @@ const Signup = () => {
                             name="fullname"
                             onChange={changeEventHandler}
                             placeholder="Bob Smith"
-                            className={errors.fullName ? "border-red-500" : ""}
+                            className={errors.fullname ? "border-red-500" : ""}
                         />
-                        {errors.fullName && <p className='text-red-500 text-xs mt-1'>{errors.fullName}</p>}
+                        {errors.fullname && <p className='text-red-500 text-xs mt-1'>{errors.fullname}</p>}
                     </div>
 
                     {/* Email */}
