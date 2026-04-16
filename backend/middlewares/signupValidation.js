@@ -3,7 +3,7 @@ import Joi from "joi";
 // ─── Schema ────────────────────────────────────────────────────────────────────
 
 const signupSchema = Joi.object({
-  fullName: Joi.string()
+  fullname: Joi.string()
     .trim()
     .min(2)
     .max(20)
